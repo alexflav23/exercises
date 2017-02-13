@@ -8,7 +8,7 @@ lazy val Versions = new {
 	val scalacheck = ""
 }
 
-lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
+lazy val commonSettings = Seq(
 	 scalacOptions in ThisBuild ++= Seq(
     "-language:experimental.macros",
     "-language:postfixOps",
