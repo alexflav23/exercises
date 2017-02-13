@@ -3,12 +3,15 @@ package com.markit.tickertracker
 import java.time.{LocalDate, Period, ZoneOffset}
 import java.util.concurrent.TimeUnit
 
+import com.outworkers.util.catsparsers._
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import com.outworkers.util.testing._
 import org.scalatest.concurrent.PatienceConfiguration
+import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.time.{Millis, Seconds, Span}
+import com.outworkers.util.catsparsers._
 
-class TrackerTest extends FlatSpec with Matchers with OptionValues {
+class TrackerTest extends FlatSpec with Matchers with OptionValues with GeneratorDrivenPropertyChecks {
 
   protected[this] val defaultScalaTimeoutSeconds = 25
 
@@ -24,6 +27,16 @@ class TrackerTest extends FlatSpec with Matchers with OptionValues {
     timeout = defaultTimeoutSpan,
     interval = Span(defaultScalaInterval, Millis)
   )
+
+  it should "correctly parse a daily value from a sequence of strings" in {
+    forAll { value: Long =>
+
+      val sample = gen[DailyValue]
+
+      biparse[Seq[String], DailyValue](sample.asCsv).isValid shouldEqual true
+    }
+
+  }
 
   it should "retrieve a basic set of information from Yahoo" in {
     val request = Tracker.daily(PriceRequest(TickerSymbol.GOOG))

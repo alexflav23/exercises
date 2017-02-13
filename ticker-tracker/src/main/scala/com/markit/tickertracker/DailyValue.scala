@@ -19,7 +19,17 @@ case class DailyValue(
   volume: Long,
   adjClose: BigDecimal,
   date: LocalDate
-)
+) {
+  def asCsv: Seq[String] = Seq(
+    date.toString,
+    open.toString,
+    high.toString,
+    low.toString,
+    close.toString,
+    volume.toString,
+    adjClose.toString()
+  )
+}
 
 object DailyValue {
   val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
