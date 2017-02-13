@@ -26,13 +26,10 @@ class TrackerTest extends FlatSpec with Matchers with OptionValues {
   )
 
   it should "retrieve a basic set of information from Yahoo" in {
-    val now = LocalDate.now(ZoneOffset.UTC)
-    val days = 30
-    val request = Tracker
-      .tickerPrices(TickerSymbol.GOOG, now.minus(Period.ofDays(days)), now)
+    val request = Tracker.daily(TickerSymbol.GOOG)
 
     request.successful { prices =>
-      prices.length shouldEqual days
+
     }
   }
 
@@ -44,6 +41,11 @@ class TrackerTest extends FlatSpec with Matchers with OptionValues {
     }
   }
 
-  //val googleDailyReturns = returns(TickerSymbol.GOOG)
-  //val googleAverageReturns = medianReturn(TickerSymbol.GOOG)
+  it should "retrieve the median value of a year for the GOOG symbol" in {
+    val googMedianPrice = Tracker.medianReturn(TickerSymbol.GOOG)
+
+    googMedianPrice.successful { res =>
+      info(res.toString())
+    }
+  }
 }

@@ -2,6 +2,7 @@ package com.markit.tickertracker
 
 import java.io.{ByteArrayInputStream, InputStreamReader}
 import java.time.{LocalDate, Period, ZoneOffset}
+import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
 
 import cats.data.ValidatedNel
@@ -22,26 +23,27 @@ trait Tracker {
 
   def logger: Logger = Logger.getLogger("tracker")
 
+  def cache: ConcurrentHashMap[PriceRequest, Iterator[ValidatedNel[String, DailyValue]]] = new ConcurrentHashMap()
+
   private[this] def host: String = "real-chart.finance.yahoo.com:80"
 
-  def client: Service[http.Request, http.Response] = Http.client.withStreaming(enabled = true).newService(host)
+  def client: Service[http.Request, http.Response] = Http.client.newService(host)
 
   protected[tickertracker] def parseResponse(
     httpResponse: http.Response
   ): Future[Iterator[ValidatedNel[String, DailyValue]]] = httpResponse match {
-    case response if response.status != Status.Ok => Future.exception(new Exception(s"Status code ${response.status}"))
+    case response if response.status != Status.Ok => Future.exception(new Exception(s"Invalid status code ${response.status}"))
     case resp => resp.reader.read(Int.MaxValue) map {
       case Some(buf) if !buf.isEmpty =>
         val arr = Buf.ByteArray.Owned.extract(buf)
         CSVReader.open(new InputStreamReader(new ByteArrayInputStream(arr))).iterator.drop(1).map { seq =>
           biparse[Seq[String], DailyValue](seq)
         }
-
       case None => Iterator("Unable to extract a byte buffer from source".invalidNel[DailyValue])
     }
   }
 
-  def pricesURL(
+  protected[this] def pricesURL(
     ticker: TickerSymbol,
     businessDate: LocalDate,
     today: LocalDate = LocalDate.now(ZoneOffset.UTC)
@@ -58,12 +60,22 @@ trait Tracker {
     client(req) flatMap parseResponse
   }
 
-  def tickerPrices(
+  protected[this] def pricesURL(req: PriceRequest): Future[Iterator[ValidatedNel[String, DailyValue]]] = {
+    if (cache.containsKey(req)) {
+      Future.value(cache.get(req))
+    } else {
+      val f = pricesURL(req.tickerSymbol, req.businessDate, req.today)
+      f onSuccess (data => cache.put(req, data))
+      f
+    }
+  }
+
+  def daily(
     tk: TickerSymbol,
-    bd: LocalDate,
+    bd: LocalDate = LocalDate.now(ZoneOffset.UTC),
     td: LocalDate = LocalDate.now(ZoneOffset.UTC)
   ): Future[Iterator[DailyValue]] = {
-    pricesURL(tk, bd, td) map (_.flatMap(_.toOption))
+    pricesURL(PriceRequest(tk, bd, td)) map (_.flatMap(_.toOption))
   }
 
   /**
@@ -72,7 +84,7 @@ trait Tracker {
     * @return An iterator of price instants, a price associated with a [[java.time.LocalDate]].
     */
   def dailyPrices(ticker: TickerSymbol): Future[Seq[PriceInstant]] = {
-    tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map { col =>
+    daily(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map { col =>
       col.map(daily => PriceInstant(daily.date, daily.adjClose)).toSeq.sortBy(_.date)
     }
   }
@@ -83,7 +95,7 @@ trait Tracker {
     * @return An iterator of price instants, a price associated with a [[java.time.LocalDate]].
     */
   def returns(ticker: TickerSymbol) : Future[Iterator[PriceInstant]] = {
-    tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map {
+    daily(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map {
       iterator => iterator.sliding(2) map {
         case Seq(yesterday, today) => PriceInstant(
           today.date,
@@ -100,7 +112,7 @@ trait Tracker {
     * @return A future wrapping the total number.
     */
   def medianReturn(ticker: TickerSymbol): Future[BigDecimal] = {
-    tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC)) map (_.map(Computation.MedianPrice).sum)
+    daily(ticker) map (_.map(Computation.MedianPrice).sum)
   }
 }
 
