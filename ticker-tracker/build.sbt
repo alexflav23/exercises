@@ -10,6 +10,8 @@ lazy val Versions = new {
 
 lazy val Utils = new {
   def isJdk8: Boolean = sys.props("java.specification.version") == "1.8"
+
+  def isCIBuild: Boolean = sys.env.get("CI").exists("true" ==)
 }
 
 lazy val commonSettings = Seq(
@@ -35,6 +37,15 @@ lazy val commonSettings = Seq(
         "-XX:PermSize=256m",
         "-XX:MaxPermSize=512m"
       )
+    }
+  },
+  testOptions in Test ++= {
+    if (Utils.isCIBuild) {
+      // Under CI show test durations with short stack traces.
+      Seq(Tests.Argument("-oD"), Tests.Argument("-oS"))
+    } else {
+      // Under normal circumstances show full stack traces and duration.
+      Seq(Tests.Argument("-oF"), Tests.Argument("-oD"))
     }
   },
   scalacOptions in ThisBuild ++= Seq(
