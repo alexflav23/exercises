@@ -21,6 +21,7 @@ case class TickerValue(
   date: LocalDate
 )
 
+
 object TickerValue {
   val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
 

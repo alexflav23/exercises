@@ -1,7 +1,7 @@
 package com.markit.tickertracker
 
 import java.io.{ByteArrayInputStream, InputStreamReader}
-import java.time.{LocalDate, ZoneOffset}
+import java.time.{LocalDate, Period, ZoneOffset}
 import java.util.logging.Logger
 
 import cats.data.ValidatedNel
@@ -69,14 +69,20 @@ trait Tracker {
   }
 
   def dailyPrices(ticker: TickerSymbol): Future[Iterator[PriceInstant]] = {
-
+    correctPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1)))
   }
 
   def returns(ticker: TickerSymbol) : Future[Iterator[PriceInstant]] = {
 
   }
 
-  def meanReturn(ticker: TickerSymbol): Future[BigDecimal] = {
+  /**
+    * Returns a MEDIAN value based on the daily high low price of a symbol.
+    * We cannot from the data provided by YAHOO finance infer the mean.
+    * @param ticker The ticker symbol to compute for.
+    * @return A future wrapping the total number.
+    */
+  def medianReturn(ticker: TickerSymbol): Future[BigDecimal] = {
     correctPrices(ticker, LocalDate.now(ZoneOffset.UTC)) map { values =>
       values.map(_.adjClose).sum
     }
@@ -84,7 +90,7 @@ trait Tracker {
 
   val googleDailyPrices = dailyPrices(TickerSymbol.GOOG)
   val googleDailyReturns = returns(TickerSymbol.GOOG)
-  val googleAverageReturns = meanReturn(TickerSymbol.GOOG)
+  val googleAverageReturns = medianReturn(TickerSymbol.GOOG)
 }
 
 object Tracker extends Tracker
