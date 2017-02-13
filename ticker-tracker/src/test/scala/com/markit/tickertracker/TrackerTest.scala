@@ -10,8 +10,16 @@ import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.time.{Millis, Seconds, Span}
 import com.outworkers.util.catsparsers._
+import org.scalacheck.{Arbitrary, Gen}
 
 class TrackerTest extends FlatSpec with Matchers with OptionValues with GeneratorDrivenPropertyChecks {
+
+  implicit object LocalDateSampler extends Sample[LocalDate] {
+    override def sample: LocalDate = LocalDate.now(ZoneOffset.UTC)
+  }
+
+  // dodgy business I know, but ScalaCheck don't have no implicit macro materializer like I do.
+  implicit def dailyValueArbitrary: Arbitrary[DailyValue] = Arbitrary(gen[DailyValue])
 
   protected[this] val defaultScalaTimeoutSeconds = 25
 
@@ -29,13 +37,9 @@ class TrackerTest extends FlatSpec with Matchers with OptionValues with Generato
   )
 
   it should "correctly parse a daily value from a sequence of strings" in {
-    forAll { value: Long =>
-
-      val sample = gen[DailyValue]
-
+    forAll { sample: DailyValue =>
       biparse[Seq[String], DailyValue](sample.asCsv).isValid shouldEqual true
     }
-
   }
 
   it should "retrieve a basic set of information from Yahoo" in {
