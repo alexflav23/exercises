@@ -116,7 +116,13 @@ trait Tracker {
     * @return A future wrapping the total number.
     */
   def medianReturn(ticker: TickerSymbol): Future[BigDecimal] = {
-    daily(PriceRequest(ticker)) map (_.map(Computation.MedianPrice).sum)
+    daily(PriceRequest(ticker)) map (col => {
+      val (totalCount, totalSum) = col.foldLeft(0 -> BigDecimal(0)) { case ((count, sum), el) =>
+        (count + 1) -> (sum + el.adjClose)
+      }
+
+      totalSum / totalCount
+    })
   }
 }
 

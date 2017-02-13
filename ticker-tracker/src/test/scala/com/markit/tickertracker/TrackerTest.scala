@@ -46,7 +46,7 @@ class TrackerTest extends FlatSpec with Matchers with OptionValues with Generato
     val request = Tracker.daily(PriceRequest(TickerSymbol.GOOG))
 
     request.successful { prices =>
-
+      info(prices.map(_.trace()).mkString("\n"))
     }
   }
 
@@ -58,11 +58,19 @@ class TrackerTest extends FlatSpec with Matchers with OptionValues with Generato
     }
   }
 
+  it should "retrieve the returns for the GOOG symbol" in {
+    val perDayReturns = Tracker.returns(TickerSymbol.GOOG)
+
+    perDayReturns.successful { res =>
+      info(res.toString())
+    }
+  }
+
   it should "retrieve the median value of a year for the GOOG symbol" in {
     val googMedianPrice = Tracker.medianReturn(TickerSymbol.GOOG)
 
     googMedianPrice.successful { res =>
-      info(res.toString())
+      Console.println(s"Median value is $res")
     }
   }
 }
