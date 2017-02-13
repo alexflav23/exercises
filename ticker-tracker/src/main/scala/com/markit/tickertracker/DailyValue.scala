@@ -11,7 +11,7 @@ import scala.util.Try
 
 // Date,Open,High,Low,Close,Volume,Adj Close
 // 2017-02-08,807.00,811.840027,803.190002,808.380005,1155300,808.380005
-case class TickerValue(
+case class DailyValue(
   open: BigDecimal,
   high: BigDecimal,
   low: BigDecimal,
@@ -22,7 +22,7 @@ case class TickerValue(
 )
 
 
-object TickerValue {
+object DailyValue {
   val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
 
   implicit object BigDecimalParser extends Parser[BigDecimal] {
@@ -37,8 +37,8 @@ object TickerValue {
     }
   }
 
-  implicit object TickerValueParser extends BiParser[Seq[String], TickerValue] {
-    override def parse(source: Seq[String]): ValidatedNel[String, TickerValue] = {
+  implicit object TickerValueParser extends BiParser[Seq[String], DailyValue] {
+    override def parse(source: Seq[String]): ValidatedNel[String, DailyValue] = {
       cparse[LocalDate](source.option(0)) |@|
         cparse[BigDecimal](source.option(1)) |@|
         cparse[BigDecimal](source.option(2)) |@|
@@ -46,7 +46,7 @@ object TickerValue {
         cparse[BigDecimal](source.option(4)) |@|
         cparse[Long](source.option(5)) |@|
         cparse[BigDecimal](source.option(6)) map {
-          case (dt, open, high, low, close, volume, adjClose) => TickerValue(open, high, low, close, volume, adjClose, dt)
+          case (dt, open, high, low, close, volume, adjClose) => DailyValue(open, high, low, close, volume, adjClose, dt)
         }
     }
   }

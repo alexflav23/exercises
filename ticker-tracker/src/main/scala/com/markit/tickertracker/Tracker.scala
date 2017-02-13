@@ -30,16 +30,16 @@ trait Tracker {
 
   protected[tickertracker] def parseResponse(
     httpResponse: http.Response
-  ): Future[Iterator[ValidatedNel[String, TickerValue]]] = httpResponse match {
+  ): Future[Iterator[ValidatedNel[String, DailyValue]]] = httpResponse match {
     case response if response.status != Status.Ok => Future.exception(new Exception(s"Status code ${response.status}"))
     case resp => resp.reader.read(Int.MaxValue) map {
       case Some(buf) if !buf.isEmpty =>
         val arr = Buf.ByteArray.Owned.extract(buf)
         CSVReader.open(new InputStreamReader(new ByteArrayInputStream(arr))).iterator.drop(1).map { seq =>
-          biparse[Seq[String], TickerValue](seq)
+          biparse[Seq[String], DailyValue](seq)
         }
 
-      case None => Iterator("Unable to extract a byte buffer from source".invalidNel[TickerValue])
+      case None => Iterator("Unable to extract a byte buffer from source".invalidNel[DailyValue])
     }
   }
 
@@ -47,7 +47,7 @@ trait Tracker {
     ticker: TickerSymbol,
     businessDate: LocalDate,
     today: LocalDate = LocalDate.now(ZoneOffset.UTC)
-  ): Future[Iterator[ValidatedNel[String, TickerValue]]] = {
+  ): Future[Iterator[ValidatedNel[String, DailyValue]]] = {
     val lastYear = businessDate.minusYears(1)
     val url = f"http://$host/table.csv?s=${ticker.value}&a=${businessDate.getMonthValue}&b=${businessDate.getDayOfMonth}&c=${lastYear.getYear}&d=${today.getMonthValue}&e=${today.getDayOfMonth}&f=${today.getYear}&g=d&ignore=.csv"
 
@@ -64,7 +64,7 @@ trait Tracker {
     tk: TickerSymbol,
     bd: LocalDate,
     td: LocalDate = LocalDate.now(ZoneOffset.UTC)
-  ): Future[Iterator[TickerValue]] = {
+  ): Future[Iterator[DailyValue]] = {
     pricesURL(tk, bd, td) map (_.flatMap(_.toOption))
   }
 
