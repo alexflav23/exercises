@@ -7,7 +7,6 @@ lazy val Versions = new {
 	val scalacheck = "1.13.4"
   val util = "0.28.2"
   val scalaCsv = "1.3.4"
-  val caffeine = "2.3.5"
 }
 
 lazy val Utils = new {
@@ -84,7 +83,6 @@ lazy val tickerTracker = (project in file("."))
 		name := "ticker-tracker",
 		moduleName := "ticker-tracker",
 		libraryDependencies ++= Seq(
-      "com.github.ben-manes.caffeine" % "caffeine" % Versions.caffeine,
       "com.github.tototoshi" %% "scala-csv" % Versions.scalaCsv,
 			"com.twitter" %% "finagle-http" % Versions.finagle,
       "com.outworkers" %% "util-parsers-cats" % Versions.util,
