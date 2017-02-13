@@ -28,7 +28,7 @@ class TrackerTest extends FlatSpec {
   it should "retrieve a basic set of information from Yahoo" in {
     val now = LocalDate.now(ZoneOffset.UTC)
     val request = Tracker
-      .pricesURL(Ticker.GOOG, now.minus(Period.ofDays(30)), now)
+      .pricesURL(TickerSymbol.GOOG, now.minus(Period.ofDays(30)), now)
 
     request.successful { res =>
       Console.println(res.contentString)
