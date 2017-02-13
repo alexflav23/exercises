@@ -26,7 +26,7 @@ class TrackerTest extends FlatSpec with Matchers with OptionValues {
   )
 
   it should "retrieve a basic set of information from Yahoo" in {
-    val request = Tracker.daily(TickerSymbol.GOOG)
+    val request = Tracker.daily(PriceRequest(TickerSymbol.GOOG))
 
     request.successful { prices =>
 

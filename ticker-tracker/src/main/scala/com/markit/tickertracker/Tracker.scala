@@ -64,6 +64,8 @@ trait Tracker {
     prices(req.tickerSymbol, req.businessDate, req.today)
   }
 
+  def daily(symbol: TickerSymbol): Future[Iterator[DailyValue]] = daily(PriceRequest(symbol))
+
   def daily(
     req: PriceRequest
   ): Future[Iterator[DailyValue]] = {
