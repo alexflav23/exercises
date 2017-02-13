@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter
 
 import cats.data.ValidatedNel
 import com.outworkers.util.catsparsers.{parse => cparse, _}
-import com.outworkers.util.validators.dsl._
 import cats.syntax.cartesian._
 
 import scala.util.Try

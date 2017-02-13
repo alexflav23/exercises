@@ -3,12 +3,13 @@ package com.markit.tickertracker
 import java.time.{LocalDate, Period, ZoneOffset}
 import java.util.concurrent.TimeUnit
 
-import org.scalatest.FlatSpec
+import cats.data.Validated.Valid
+import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import com.outworkers.util.testing._
 import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.time.{Millis, Seconds, Span}
 
-class TrackerTest extends FlatSpec {
+class TrackerTest extends FlatSpec with Matchers with OptionValues {
 
   protected[this] val defaultScalaTimeoutSeconds = 25
 
@@ -31,7 +32,11 @@ class TrackerTest extends FlatSpec {
       .pricesURL(TickerSymbol.GOOG, now.minus(Period.ofDays(30)), now)
 
     request.successful { csvs =>
-
+      csvs.foreach { el =>
+        Console.println(el)
+        el.isValid shouldEqual true
+        el.toOption.value.trace()
+      }
     }
 
   }

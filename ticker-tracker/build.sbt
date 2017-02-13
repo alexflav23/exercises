@@ -85,7 +85,7 @@ lazy val tickerTracker = (project in file("."))
 		libraryDependencies ++= Seq(
       "com.github.tototoshi" %% "scala-csv" % Versions.scalaCsv,
 			"com.twitter" %% "finagle-http" % Versions.finagle,
-      "com.outworkers" %% "util-validators-cats" % Versions.util,
+      "com.outworkers" %% "util-parsers-cats" % Versions.util,
       "com.outworkers" %% "util-testing" % Versions.util,
 			"org.scalatest" %% "scalatest" % Versions.scalatest % Test,
 	    "org.scalacheck" %% "scalacheck" % Versions.scalacheck % Test
