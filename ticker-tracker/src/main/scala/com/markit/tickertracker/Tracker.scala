@@ -23,7 +23,7 @@ trait Tracker {
 
   def logger: Logger = Logger.getLogger("tracker")
 
-  def cache: ConcurrentHashMap[PriceRequest, Iterator[ValidatedNel[String, DailyValue]]] = new ConcurrentHashMap()
+  def cache: ConcurrentHashMap[PriceRequest, Iterator[DailyValue]] = new ConcurrentHashMap()
 
   private[this] def host: String = "real-chart.finance.yahoo.com:80"
 
@@ -43,7 +43,7 @@ trait Tracker {
     }
   }
 
-  protected[this] def pricesURL(
+  protected[this] def prices(
     ticker: TickerSymbol,
     businessDate: LocalDate,
     today: LocalDate = LocalDate.now(ZoneOffset.UTC)
@@ -60,22 +60,22 @@ trait Tracker {
     client(req) flatMap parseResponse
   }
 
-  protected[this] def pricesURL(req: PriceRequest): Future[Iterator[ValidatedNel[String, DailyValue]]] = {
+  protected[this] def prices(req: PriceRequest): Future[Iterator[ValidatedNel[String, DailyValue]]] = {
+    prices(req.tickerSymbol, req.businessDate, req.today)
+  }
+
+  def daily(symbol: TickerSymbol): Future[Iterator[DailyValue]] = daily(PriceRequest(symbol))
+
+  def daily(
+    req: PriceRequest
+  ): Future[Iterator[DailyValue]] = {
     if (cache.containsKey(req)) {
       Future.value(cache.get(req))
     } else {
-      val f = pricesURL(req.tickerSymbol, req.businessDate, req.today)
+      val f = prices(req) map (_.flatMap(_.toOption))
       f onSuccess (data => cache.put(req, data))
       f
     }
-  }
-
-  def daily(
-    tk: TickerSymbol,
-    bd: LocalDate = LocalDate.now(ZoneOffset.UTC),
-    td: LocalDate = LocalDate.now(ZoneOffset.UTC)
-  ): Future[Iterator[DailyValue]] = {
-    pricesURL(PriceRequest(tk, bd, td)) map (_.flatMap(_.toOption))
   }
 
   /**
@@ -84,7 +84,7 @@ trait Tracker {
     * @return An iterator of price instants, a price associated with a [[java.time.LocalDate]].
     */
   def dailyPrices(ticker: TickerSymbol): Future[Seq[PriceInstant]] = {
-    daily(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map { col =>
+    daily(PriceRequest(ticker)) map { col =>
       col.map(daily => PriceInstant(daily.date, daily.adjClose)).toSeq.sortBy(_.date)
     }
   }
@@ -94,13 +94,17 @@ trait Tracker {
     * @param ticker The symbol to compute the returns for.
     * @return An iterator of price instants, a price associated with a [[java.time.LocalDate]].
     */
-  def returns(ticker: TickerSymbol) : Future[Iterator[PriceInstant]] = {
-    daily(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map {
-      iterator => iterator.sliding(2) map {
-        case Seq(yesterday, today) => PriceInstant(
-          today.date,
-          (today.adjClose - yesterday.adjClose).abs / yesterday.adjClose
-        )
+  def returns(ticker: TickerSymbol) : Future[List[PriceInstant]] = {
+    daily(PriceRequest(ticker)) map {
+      iterator => iterator.toList.sortBy(_.date).sliding(2).foldLeft(List.empty[PriceInstant]) { case (acc, el) =>
+        el match {
+          case yesterday :: today :: Nil => PriceInstant(
+            today.date,
+            (today.adjClose - yesterday.adjClose).abs / yesterday.adjClose
+          ) :: acc
+
+          case _ => acc
+        }
       }
     }
   }
@@ -112,7 +116,13 @@ trait Tracker {
     * @return A future wrapping the total number.
     */
   def medianReturn(ticker: TickerSymbol): Future[BigDecimal] = {
-    daily(ticker) map (_.map(Computation.MedianPrice).sum)
+    daily(PriceRequest(ticker)) map (col => {
+      val (totalCount, totalSum) = col.foldLeft(0 -> BigDecimal(0)) { case ((count, sum), el) =>
+        (count + 1) -> (sum + el.adjClose)
+      }
+
+      totalSum / totalCount
+    })
   }
 }
 

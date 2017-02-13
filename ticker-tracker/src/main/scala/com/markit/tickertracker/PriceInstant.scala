@@ -1,12 +1,19 @@
 package com.markit.tickertracker
 
-import java.time.LocalDate
+import java.time.{LocalDate, ZoneOffset}
 
 case class PriceRequest(
   tickerSymbol: TickerSymbol,
   businessDate: LocalDate,
   today: LocalDate
 )
+
+object PriceRequest {
+  def apply(tickerSymbol: TickerSymbol): PriceRequest = {
+    val now = LocalDate.now(ZoneOffset.UTC)
+    PriceRequest(tickerSymbol, now, now)
+  }
+}
 
 case class PriceInstant(
   date: LocalDate,
