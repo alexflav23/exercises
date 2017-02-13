@@ -7,10 +7,9 @@ import java.util.logging.Logger
 import cats.data.ValidatedNel
 import com.github.tototoshi.csv.CSVReader
 import com.outworkers.util.catsparsers._
-import com.twitter.concurrent.AsyncStream
 import com.twitter.finagle.http.Status
 import com.twitter.finagle.{Http, Service, http}
-import com.twitter.io.{Buf, Reader}
+import com.twitter.io.Buf
 import com.twitter.util.Future
 
 class TickerSymbol(val value: String)
@@ -67,34 +66,42 @@ trait Tracker {
     pricesURL(tk, bd, td) map (_.flatMap(_.toOption))
   }
 
-  def dailyPrices(ticker: TickerSymbol): Future[Iterator[PriceInstant]] = {
+  /**
+    * Returns a list of historical prices for one year ending with today.
+    * @param ticker The symbol to retrieve the daily returns for.
+    * @return An iterator of price instants, a price associated with a [[java.time.LocalDate]].
+    */
+  def dailyPrices(ticker: TickerSymbol): Future[Seq[PriceInstant]] = {
+    tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map { col =>
+      col.map(daily => PriceInstant(daily.date, daily.adjClose)).toSeq.sortBy(_.date)
+    }
+  }
+
+  /**
+    * Computes the returns of a symbol using the (PRICE_TODAY - PRICE_YESTERDAY) / PRICE_YESTERDAY
+    * @param ticker The symbol to compute the returns for.
+    * @return An iterator of price instants, a price associated with a [[java.time.LocalDate]].
+    */
+  def returns(ticker: TickerSymbol) : Future[Iterator[PriceInstant]] = {
     tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map {
       iterator => iterator.sliding(2) map {
         case Seq(yesterday, today) => PriceInstant(
           today.date,
-          (yesterday.adjClose + today.adjClose) / yesterday.adjClose
+          (today.adjClose - yesterday.adjClose).abs / yesterday.adjClose
         )
       }
     }
   }
 
-  def returns(ticker: TickerSymbol) : Future[Iterator[PriceInstant]] = {
-
-  }
-
   /**
     * Returns a MEDIAN value based on the daily high low price of a symbol.
     * We cannot from the data provided by YAHOO finance infer the mean.
-    * @param ticker The ticker symbol to compute for.
+    * @param ticker The symbol to compute the median return for.
     * @return A future wrapping the total number.
     */
   def medianReturn(ticker: TickerSymbol): Future[BigDecimal] = {
     tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC)) map (_.map(Computation.MedianPrice).sum)
   }
-
-  val googleDailyPrices = dailyPrices(TickerSymbol.GOOG)
-  val googleDailyReturns = returns(TickerSymbol.GOOG)
-  val googleAverageReturns = medianReturn(TickerSymbol.GOOG)
 }
 
 object Tracker extends Tracker

@@ -7,8 +7,6 @@ case class PriceInstant(
   value: BigDecimal
 )
 
-
-
 trait PriceComputation extends (DailyValue => BigDecimal)
 
 object Computation {
