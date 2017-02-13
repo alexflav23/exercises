@@ -3,7 +3,6 @@ package com.markit.tickertracker
 import java.time.{LocalDate, Period, ZoneOffset}
 import java.util.concurrent.TimeUnit
 
-import cats.data.Validated.Valid
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import com.outworkers.util.testing._
 import org.scalatest.concurrent.PatienceConfiguration
@@ -27,17 +26,26 @@ class TrackerTest extends FlatSpec with Matchers with OptionValues {
   )
 
   it should "retrieve a basic set of information from Yahoo" in {
-    val now = LocalDate.now(ZoneOffset.UTC)
-    val request = Tracker
-      .pricesURL(TickerSymbol.GOOG, now.minus(Period.ofDays(30)), now)
+    val request = Tracker.daily(TickerSymbol.GOOG)
 
-    request.successful { csvs =>
-      csvs.foreach { el =>
-        Console.println(el)
-        el.isValid shouldEqual true
-        el.toOption.value.trace()
-      }
+    request.successful { prices =>
+
     }
+  }
 
+  it should "retrieve a set of daily values for the GOOG symbol" in {
+    val googleDailyPrices = Tracker.dailyPrices(TickerSymbol.GOOG)
+
+    googleDailyPrices.successful { res =>
+      res.foreach(r => println(r.trace()))
+    }
+  }
+
+  it should "retrieve the median value of a year for the GOOG symbol" in {
+    val googMedianPrice = Tracker.medianReturn(TickerSymbol.GOOG)
+
+    googMedianPrice.successful { res =>
+      info(res.toString())
+    }
   }
 }

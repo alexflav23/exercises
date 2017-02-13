@@ -2,12 +2,16 @@ package com.markit.tickertracker
 
 import java.time.LocalDate
 
+case class PriceRequest(
+  tickerSymbol: TickerSymbol,
+  businessDate: LocalDate,
+  today: LocalDate
+)
+
 case class PriceInstant(
   date: LocalDate,
   value: BigDecimal
 )
-
-
 
 trait PriceComputation extends (DailyValue => BigDecimal)
 
