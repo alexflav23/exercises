@@ -30,8 +30,8 @@ class TrackerTest extends FlatSpec {
     val request = Tracker
       .pricesURL(TickerSymbol.GOOG, now.minus(Period.ofDays(30)), now)
 
-    request.successful { res =>
-      Console.println(res.contentString)
+    request.successful { csvs =>
+
     }
 
   }

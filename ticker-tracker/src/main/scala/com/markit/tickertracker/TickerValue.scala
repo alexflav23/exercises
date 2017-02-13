@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 import cats.data.ValidatedNel
 import com.outworkers.util.catsparsers.{parse => cparse, _}
 import com.outworkers.util.validators.dsl._
+import cats.syntax.cartesian._
 
 import scala.util.Try
 
@@ -37,15 +38,14 @@ object TickerValue {
   }
 
   implicit object TickerValueParser extends BiParser[Seq[String], TickerValue] {
-    override def parse(source: Seq[String]): Nel[TickerValue] = {
-      source(5)
-      cparse[LocalDate](source.option(0)).prop("date") and
-        cparse[BigDecimal](source.option(1)).prop("open") and
-        cparse[BigDecimal](source.option(1)).prop("high") and
-        cparse[BigDecimal](source.option(1)).prop("low") and
-        cparse[BigDecimal](source.option(1)).prop("close") and
-        cparse[Long](source.option(1)).prop("volume") and
-        cparse[BigDecimal](source.option(1)).prop("adj_close") map {
+    override def parse(source: Seq[String]): ValidatedNel[String, TickerValue] = {
+      cparse[LocalDate](source.option(0)) |@|
+        cparse[BigDecimal](source.option(1)) |@|
+        cparse[BigDecimal](source.option(2)) |@|
+        cparse[BigDecimal](source.option(3)) |@|
+        cparse[BigDecimal](source.option(4)) |@|
+        cparse[Long](source.option(5)) |@|
+        cparse[BigDecimal](source.option(6)) map {
           case (dt, open, high, low, close, volume, adjClose) => TickerValue(open, high, low, close, volume, adjClose, dt)
         }
     }
