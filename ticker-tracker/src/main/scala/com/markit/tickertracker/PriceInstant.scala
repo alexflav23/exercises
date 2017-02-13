@@ -12,5 +12,7 @@ case class PriceInstant(
 trait PriceComputation extends (TickerValue => BigDecimal)
 
 object Computation {
-  case object MedianPrice extends PriceComputation
+  object MedianPrice extends PriceComputation {
+    override def apply(v1: TickerValue): BigDecimal = (v1.high + v1.low) / 2
+  }
 }

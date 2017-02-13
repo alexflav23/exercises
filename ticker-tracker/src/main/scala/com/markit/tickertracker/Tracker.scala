@@ -33,7 +33,7 @@ trait Tracker {
   ): Future[Iterator[ValidatedNel[String, TickerValue]]] = httpResponse match {
     case response if response.status != Status.Ok => Future.exception(new Exception(s"Status code ${response.status}"))
     case resp => resp.reader.read(Int.MaxValue) map {
-      case Some(buf) if buf.length > 100 =>
+      case Some(buf) if !buf.isEmpty =>
         val arr = Buf.ByteArray.Owned.extract(buf)
         CSVReader.open(new InputStreamReader(new ByteArrayInputStream(arr))).iterator.drop(1).map { seq =>
           biparse[Seq[String], TickerValue](seq)
@@ -60,7 +60,7 @@ trait Tracker {
     client(req) flatMap parseResponse
   }
 
-  def correctPrices(
+  def tickerPrices(
     tk: TickerSymbol,
     bd: LocalDate,
     td: LocalDate = LocalDate.now(ZoneOffset.UTC)
@@ -69,7 +69,7 @@ trait Tracker {
   }
 
   def dailyPrices(ticker: TickerSymbol): Future[Iterator[PriceInstant]] = {
-    correctPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1)))
+    tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1)))
   }
 
   def returns(ticker: TickerSymbol) : Future[Iterator[PriceInstant]] = {
@@ -83,9 +83,7 @@ trait Tracker {
     * @return A future wrapping the total number.
     */
   def medianReturn(ticker: TickerSymbol): Future[BigDecimal] = {
-    correctPrices(ticker, LocalDate.now(ZoneOffset.UTC)) map { values =>
-      values.map(_.adjClose).sum
-    }
+    tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC)) map (_.map(Computation.MedianPrice).sum)
   }
 
   val googleDailyPrices = dailyPrices(TickerSymbol.GOOG)
