@@ -27,7 +27,6 @@ trait Tracker {
 
   def client: Service[http.Request, http.Response] = Http.client.withStreaming(enabled = true).newService(host)
 
-
   protected[tickertracker] def parseResponse(
     httpResponse: http.Response
   ): Future[Iterator[ValidatedNel[String, DailyValue]]] = httpResponse match {
@@ -69,7 +68,14 @@ trait Tracker {
   }
 
   def dailyPrices(ticker: TickerSymbol): Future[Iterator[PriceInstant]] = {
-    tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1)))
+    tickerPrices(ticker, LocalDate.now(ZoneOffset.UTC).minus(Period.ofDays(1))) map {
+      iterator => iterator.sliding(2) map {
+        case Seq(yesterday, today) => PriceInstant(
+          today.date,
+          (yesterday.adjClose + today.adjClose) / yesterday.adjClose
+        )
+      }
+    }
   }
 
   def returns(ticker: TickerSymbol) : Future[Iterator[PriceInstant]] = {

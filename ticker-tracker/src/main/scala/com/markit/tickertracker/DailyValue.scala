@@ -21,7 +21,6 @@ case class DailyValue(
   date: LocalDate
 )
 
-
 object DailyValue {
   val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
 
