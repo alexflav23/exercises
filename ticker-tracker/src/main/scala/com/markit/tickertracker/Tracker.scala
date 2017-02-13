@@ -27,10 +27,12 @@ trait Tracker {
     today: LocalDate = LocalDate.now(ZoneOffset.UTC)
   ): Future[http.Response] = {
     val lastYear = businessDate.minusYears(1)
-    val url = f"$rootUrl/table.csv?s=${ticker.value}&a=${businessDate.getMonthValue}&b=${businessDate.getDayOfMonth}&c=${lastYear.getYear}&d=${today.getMonthValue}&e=${today.getDayOfMonth}&f=${today.getYear}&g=d&ignore=.csv"
+    val url = f"http://$rootUrl/table.csv?s=${ticker.value}&a=${businessDate.getMonthValue}&b=${businessDate.getDayOfMonth}&c=${lastYear.getYear}&d=${today.getMonthValue}&e=${today.getDayOfMonth}&f=${today.getYear}&g=d&ignore=.csv"
 
     logger.info(s"Making a request to $url")
-    val req = http.Request(http.Method.Get, url)
+    val req = http.Request(http.Version.Http11, http.Method.Get, url)
+    req.setContentType("application/csv")
+
     client.apply(req)
   }
 
