@@ -1,12 +1,15 @@
 import sbt._
 import Keys._
 
-
 lazy val Versions = new {
 	val finagle = "6.42.0"
 	val scalatest = "3.0.0"
 	val scalacheck = "1.13.4"
   val util = "0.28.2"
+}
+
+lazy val Utils = new {
+  def isJdk8: Boolean = sys.props("java.specification.version") == "1.8"
 }
 
 lazy val commonSettings = Seq(
@@ -18,6 +21,22 @@ lazy val commonSettings = Seq(
     Resolver.sonatypeRepo("releases"),
     Resolver.jcenterRepo
   ),
+  fork in Test := true,
+  javaOptions in Test ++= {
+    if (Utils.isJdk8) {
+      println("Using metaspace settings for JDK8 compatible VMs")
+      Seq(
+        "-XX:MetaspaceSize=256m",
+        "-XX:MaxMetaspaceSize=512m"
+      )
+    } else {
+      println("Using legacy perm gen settings.")
+      Seq(
+        "-XX:PermSize=256m",
+        "-XX:MaxPermSize=512m"
+      )
+    }
+  },
   scalacOptions in ThisBuild ++= Seq(
     "-language:experimental.macros",
     "-language:postfixOps",
