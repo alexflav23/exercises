@@ -1,7 +1,5 @@
 package model.domain
 
-import java.util.UUID
-
 case class Category(value: String)
 
 /**
@@ -20,6 +18,10 @@ case class Attributes(map: Map[String, String]) {
   def +(other: (String, String)): Attributes = copy(map + other)
 }
 
+object Attributes {
+  def empty: Attributes = Attributes(Map.empty)
+}
+
 /**
   * In here we are storing a list of categories for a product.
   * We could simply use a set, but we are wrapping it into a separate class
@@ -29,8 +31,7 @@ case class Attributes(map: Map[String, String]) {
   * @param values The set of values to use for categories.
   */
 case class Categories(values: Set[Category]) {
-
-  private[domain] def categories: Set[String] = values.map(_.value)
+  def categories: Set[String] = values.map(_.value)
 
   /**
     * Adds a new category to the set of categories.
@@ -43,16 +44,27 @@ case class Categories(values: Set[Category]) {
 
 object Categories {
 
+  def empty: Categories = Categories(Set.empty[Category])
+
   /**
-    * Helper to allow us to parse a structure from the database easily.
+    * Helper to allow us to parse a structure from the database or storage easily.
     * @param set A set of strings that get persisted to the DB where each string represents a category.
     * @return A [[Categories]] instance corresponding to the input set.
     */
-  def apply(set: Set[String]): Categories = Categories(set.map(Category.apply))
+  def set(set: Set[String]): Categories = Categories(set.map(Category.apply))
+
+  def apply(cat: Category): Categories = Categories(Set(cat))
 }
 
+case class CategoryDistribution(map: Map[String, Long])
+
+/**
+  * A simple product definition, containing the basic set of information about a product.
+  * @param title The title of the product.
+  * @param attributes The attributes map of the underlying product.
+  */
 case class StoreProduct(
-  id: UUID,
-  name: String,
-  attributes: Attributes
+  title: String,
+  attributes: Attributes = Attributes.empty,
+  categories: Categories = Categories.empty
 )

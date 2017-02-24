@@ -1,0 +1,4 @@
+GET     /category/distribution                    controllers.StoreController.getCategoryDistribution
+GET     /category/:title                          controllers.StoreController.categoriesWithProductTitles(title)
+GET     /product/:title                           controllers.StoreController.getProduct(title)
+PUT     /product/:title/category/:cat             controllers.StoreController.addProductToCategory(title, cat)

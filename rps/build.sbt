@@ -4,8 +4,7 @@ import Keys._
 lazy val Versions = new {
 	val scalatest = "3.0.0"
 	val scalacheck = "1.13.4"
-  val util = "0.30.1"
-  val phantom = "2.1.3"
+  val phantom = "2.2.0"
 }
 
 lazy val Utils = new {
@@ -97,7 +96,8 @@ lazy val onlineStore = (project in file("."))
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "ch.qos.logback" % "logback-classic" % "1.2.1",
       "com.outworkers" %% "phantom-dsl" % Versions.phantom,
-      "com.outworkers" %% "util-testing" % Versions.util % Test,
+      "com.danielasfregola" %% "random-data-generator" % "2.0" % Test,
+      "org.scalatest" %% "scalatest" % Versions.scalatest % Test,
       "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0-M1" % Test
     )
   )
