@@ -21,7 +21,7 @@ object Futures {
     _ <- f4
   } yield ()
 
-  // complex dependnency
+  // complex dependency, where f2 and f3 depend of f1, but not on each other, so they can be executed in parallel.
   val chain2 = for {
     _ <- f1
     _ <- Future.sequence(List(f2, f3))
