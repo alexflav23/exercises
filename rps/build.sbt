@@ -4,7 +4,7 @@ import Keys._
 lazy val Versions = new {
 	val scalatest = "3.0.0"
 	val scalacheck = "1.13.4"
-  val util = "0.30.1"
+  val phantom = "2.2.0"
 }
 
 lazy val Utils = new {
@@ -94,9 +94,10 @@ lazy val onlineStore = (project in file("."))
     libraryDependencies ++= Seq(
       filters,
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
-      "ch.qos.logback" % "logback-classic" % "1.1.7",
-      "com.outworkers" %% "util-play" % Versions.util,
-      "com.outworkers" %% "util-testing" % Versions.util % Test,
+      "ch.qos.logback" % "logback-classic" % "1.2.1",
+      "com.outworkers" %% "phantom-dsl" % Versions.phantom,
+      "com.danielasfregola" %% "random-data-generator" % "2.0" % Test,
+      "org.scalatest" %% "scalatest" % Versions.scalatest % Test,
       "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0-M1" % Test
     )
   )
